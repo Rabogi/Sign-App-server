@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/root/gits/Sign-App-server/Sign-App-server.csproj": {}
+    "/home/rabogi/gits/Sign-App-server/Sign-App-server.csproj": {}
   },
   "projects": {
-    "/root/gits/Sign-App-server/Sign-App-server.csproj": {
+    "/home/rabogi/gits/Sign-App-server/Sign-App-server.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/root/gits/Sign-App-server/Sign-App-server.csproj",
+        "projectUniqueName": "/home/rabogi/gits/Sign-App-server/Sign-App-server.csproj",
         "projectName": "Sign-App-server",
-        "projectPath": "/root/gits/Sign-App-server/Sign-App-server.csproj",
-        "packagesPath": "/root/.nuget/packages/",
-        "outputPath": "/root/gits/Sign-App-server/obj/",
+        "projectPath": "/home/rabogi/gits/Sign-App-server/Sign-App-server.csproj",
+        "packagesPath": "/home/rabogi/.nuget/packages/",
+        "outputPath": "/home/rabogi/gits/Sign-App-server/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/root/.nuget/NuGet/NuGet.Config"
+          "/home/rabogi/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -32,6 +32,11 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {
@@ -41,6 +46,10 @@
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
               "version": "[8.0.2, )"
+            },
+            "RestSharp": {
+              "target": "Package",
+              "version": "[111.1.0, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
@@ -66,7 +75,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/8.0.102/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.300/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
