@@ -1,5 +1,7 @@
 bin/
 obj/
+bin/*
+obj/*
 bin/Debug/net8.0/Sign-App-server
 bin/Debug/net8.0/Sign-App-server.dll
 bin/Debug/net8.0/Sign-App-server.pdb
@@ -22,3 +24,5 @@ obj/Debug/net8.0/Sign-App-server.pdb
 obj/Debug/net8.0/Sign-App-server.sourcelink.json
 obj/Debug/net8.0/ref/Sign-App-server.dll
 obj/Debug/net8.0/refint/Sign-App-server.dll
+obj/Debug/net8.0/Sign-App-server.AssemblyInfo.cs
+obj/Debug/net8.0/Sign-App-server.AssemblyInfoInputs.cache
