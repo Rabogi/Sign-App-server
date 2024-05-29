@@ -1,15 +1,15 @@
 using Sign_App_server;
 
+//conf TODO add read conf from file in root
+string storagePath = "./storage/";
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -34,19 +34,30 @@ app.MapGet("/weatherforecast", () =>
         ))
         .ToArray();
     return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
-
-// app.MapPost("/hash256", async (StringContent data) =>{
-//     Console.WriteLine(data);
-//     return(SlimShady.Sha256Hash(data.ToString()));
-// });
+});
 
 app.MapPost("/hash256", async (HttpContext httpContext) =>{
     using StreamReader reader = new StreamReader(httpContext.Request.Body);
     string data = await reader.ReadToEndAsync();
     return(SlimShady.Sha256Hash(data));
+    });
+
+app.MapPost("/uploadfiles", async (HttpContext httpContext) =>{
+    
+    IFormFileCollection files = httpContext.Request.Form.Files;
+
+    foreach (var file in files)
+    {
+    
+        string fullPath = storagePath+"/"+file.FileName;
+
+        using (var fileStream = new FileStream(fullPath, FileMode.Create))
+        {
+            await file.CopyToAsync(fileStream);
+        }
+    }
+
+    return "Файлы записаны";
 });
 
 app.Run();
