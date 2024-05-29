@@ -1,3 +1,5 @@
+using Sign_App_server;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -35,6 +37,17 @@ app.MapGet("/weatherforecast", () =>
 })
 .WithName("GetWeatherForecast")
 .WithOpenApi();
+
+// app.MapPost("/hash256", async (StringContent data) =>{
+//     Console.WriteLine(data);
+//     return(SlimShady.Sha256Hash(data.ToString()));
+// });
+
+app.MapPost("/hash256", async (HttpContext httpContext) =>{
+    using StreamReader reader = new StreamReader(httpContext.Request.Body);
+    string data = await reader.ReadToEndAsync();
+    return(SlimShady.Sha256Hash(data));
+});
 
 app.Run();
 
