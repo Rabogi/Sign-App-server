@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Sign-App-server")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f005ee586a95f6f06ef3f26224b62352ae12325c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5209f46ede30d7bf5564f94cc6f4bd20e219e5ec")]
 [assembly: System.Reflection.AssemblyProductAttribute("Sign-App-server")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Sign-App-server")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

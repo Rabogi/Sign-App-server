@@ -1,7 +1,9 @@
+using System.Text;
 using Sign_App_server;
 
 //conf TODO add read conf from file in root
 string storagePath = "./storage/";
+bool unsafeAccess = true;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +27,7 @@ var summaries = new[]
 
 app.MapGet("/weatherforecast", () =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
+    var forecast = Enumerable.Range(1, 5).Select(index =>
         new WeatherForecast
         (
             DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
@@ -36,20 +38,22 @@ app.MapGet("/weatherforecast", () =>
     return forecast;
 });
 
-app.MapPost("/hash256", async (HttpContext httpContext) =>{
+app.MapPost("/hash256", async (HttpContext httpContext) =>
+{
     using StreamReader reader = new StreamReader(httpContext.Request.Body);
     string data = await reader.ReadToEndAsync();
-    return(SlimShady.Sha256Hash(data));
-    });
+    return (SlimShady.Sha256Hash(data));
+});
 
-app.MapPost("/uploadfiles", async (HttpContext httpContext) =>{
-    
+app.MapPost("/uploadfiles", async (HttpContext httpContext) =>
+{
+
     IFormFileCollection files = httpContext.Request.Form.Files;
 
     foreach (var file in files)
     {
-    
-        string fullPath = storagePath+"/"+file.FileName;
+
+        string fullPath = storagePath + "/" + file.FileName;
 
         using (var fileStream = new FileStream(fullPath, FileMode.Create))
         {
@@ -57,7 +61,22 @@ app.MapPost("/uploadfiles", async (HttpContext httpContext) =>{
         }
     }
 
-    return "Файлы записаны";
+    return "All files written";
+});
+
+app.MapPost("/downloadfiles", async (HttpContext httpContext) =>
+{
+    if (unsafeAccess == true)
+    {
+        using StreamReader reader = new StreamReader(httpContext.Request.Body);
+        string name = await reader.ReadToEndAsync();
+        string fname = name;
+        name = storagePath + "/" + name;
+        if (File.Exists(name))
+        {
+            await httpContext.Response.SendFileAsync(name);
+        }
+    }
 });
 
 app.Run();
