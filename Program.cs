@@ -1,9 +1,16 @@
 using System.Text;
 using Sign_App_server;
+using Sign_App_server.lib;
 
 //conf TODO add read conf from file in root
-string storagePath = "./storage/";
-bool unsafeAccess = true;
+string configPath = "./config.json";
+var conf = JsonHandler.ReadJson(File.ReadAllText(configPath));
+
+string storagePath = conf["storagePath"].ToString();
+bool unsafeMode = conf["unsafeMode"].ToString() == "true" ? true : false ;
+
+
+// authTools authTools = new authTools();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,7 +54,6 @@ app.MapPost("/hash256", async (HttpContext httpContext) =>
 
 app.MapPost("/uploadfiles", async (HttpContext httpContext) =>
 {
-
     IFormFileCollection files = httpContext.Request.Form.Files;
 
     foreach (var file in files)
@@ -66,7 +72,7 @@ app.MapPost("/uploadfiles", async (HttpContext httpContext) =>
 
 app.MapPost("/downloadfiles", async (HttpContext httpContext) =>
 {
-    if (unsafeAccess == true)
+    if (unsafeMode == true)
     {
         using StreamReader reader = new StreamReader(httpContext.Request.Body);
         string name = await reader.ReadToEndAsync();
@@ -77,6 +83,14 @@ app.MapPost("/downloadfiles", async (HttpContext httpContext) =>
             await httpContext.Response.SendFileAsync(name);
         }
     }
+});
+
+// app.MapGet("/mysqlTest", () => {
+//     return authTools.TryConnection();
+// });
+
+app.MapGet("/getConfig", () =>{
+    return storagePath + "|" + unsafeMode.ToString();
 });
 
 app.Run();

@@ -1,0 +1,8 @@
+{
+    "storagePath":"./storage/",
+    "unsafeMode":"true",
+    "SQLserverIP":"localhost",
+    "SQLusername":"SignAppServer",
+    "SQLpassword":"password",
+    "SQLdatabase":"SignAppDB"
+}
