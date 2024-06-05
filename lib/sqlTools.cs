@@ -36,6 +36,7 @@ public class SqlTools : SlimShady
         try{
         using(MySqlConnection conn= new MySqlConnection(connString)){
             conn.Open();
+
             MySqlCommand command = new MySqlCommand(query,conn);
             string res = (string)command.ExecuteScalar();
             
@@ -47,14 +48,37 @@ public class SqlTools : SlimShady
         }
     }
 
-    public async Task<string> InitDB(){
-        try{
+    // public async Task<string> InitDB(){
+    //     try{
 
+    //     }
+    //     catch {
+
+    //     }
+    // } 
+
+    public string[]? GetUserData(string username){
+        try{
+            using(MySqlConnection conn = new MySqlConnection(connString)){
+                conn.Open();
+                string query = "SELECT * FROM SignAppDB.users WHERE username = '" + username + "';";
+                MySqlCommand command = new MySqlCommand(query,conn);
+
+                List<string[]> found = new List<string[]>();
+                using(MySqlDataReader reader = command.ExecuteReader()){
+                    while(reader.Read()){
+                        found.Add([reader["id"].ToString(),reader["username"].ToString(),reader["password"].ToString(),reader["level"].ToString()]);
+                    }
+                }
+                return found[0];
+                conn.Close();
+            }
         }
         catch {
-
+            return null;
         }
-    } 
+        return null;
+    }
     
     public static string GetKey(string uname, string password){
         string key = "";

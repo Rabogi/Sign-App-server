@@ -7,7 +7,7 @@ string configPath = "./config.json";
 var conf = JsonHandler.ReadJson(File.ReadAllText(configPath));
 
 string storagePath = conf["storagePath"].ToString();
-bool unsafeMode = conf["unsafeMode"].ToString() == "true" ? true : false ;
+bool unsafeMode = conf["unsafeMode"].ToString() == "true" ? true : false;
 
 SqlTools sqlHandler = new SqlTools(
     conf["SQLserverIP"].ToString(),
@@ -91,11 +91,26 @@ app.MapPost("/downloadfiles", async (HttpContext httpContext) =>
 
 app.MapPost("/sql", async (HttpContext httpContext) =>
 {
-    using StreamReader reader = new StreamReader(httpContext.Request.Body);
-    string data = await reader.ReadToEndAsync();
-    return (sqlHandler.Query(data));
+    if (unsafeMode == true)
+    {
+        using StreamReader reader = new StreamReader(httpContext.Request.Body);
+        string data = await reader.ReadToEndAsync();
+        string res = sqlHandler.Query(data).ToString();
+        return res;
+    }
+    return "Error";
 });
 
+app.MapPost("/getuser", async (HttpContext httpContext) =>
+{
+    using StreamReader reader = new StreamReader(httpContext.Request.Body);
+    string data = await reader.ReadToEndAsync();
+    string[] res = sqlHandler.GetUserData(data);
+    if (res != null){
+        return res[0] + " " + res[1] + " " + res[2] + " " + res[3];
+    }
+    return "Error";
+});
 
 
 app.Run();
