@@ -9,8 +9,12 @@ var conf = JsonHandler.ReadJson(File.ReadAllText(configPath));
 string storagePath = conf["storagePath"].ToString();
 bool unsafeMode = conf["unsafeMode"].ToString() == "true" ? true : false ;
 
-
-// authTools authTools = new authTools();
+SqlTools sqlHandler = new SqlTools(
+    conf["SQLserverIP"].ToString(),
+    conf["SQLusername"].ToString(),
+    conf["SQLpassword"].ToString(),
+    conf["SQLdatabase"].ToString()
+);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -85,13 +89,14 @@ app.MapPost("/downloadfiles", async (HttpContext httpContext) =>
     }
 });
 
-// app.MapGet("/mysqlTest", () => {
-//     return authTools.TryConnection();
-// });
-
-app.MapGet("/getConfig", () =>{
-    return storagePath + "|" + unsafeMode.ToString();
+app.MapPost("/sql", async (HttpContext httpContext) =>
+{
+    using StreamReader reader = new StreamReader(httpContext.Request.Body);
+    string data = await reader.ReadToEndAsync();
+    return (sqlHandler.Query(data));
 });
+
+
 
 app.Run();
 
