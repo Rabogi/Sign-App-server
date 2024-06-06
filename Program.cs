@@ -123,13 +123,18 @@ app.MapPost("/login", async (HttpContext httpContext) =>
             var dbdata = sqlHandler.GetUserData(input["username"].ToString());
             if (dbdata != null){
                 if(dbdata[2] == SlimShady.Sha256Hash(input["password"].ToString())){
-                    return true;
+                    var d = DateTime.Now;
+                    return authHandler.GenKey(input["username"].ToString(), input["password"].ToString(),d);
                 }
                 
             }
         }
     }
-    return false;
+    return "Error";
+});
+
+app.MapGet("/time", () => {
+    return DateTime.Now.ToString();
 });
 
 app.Run();
