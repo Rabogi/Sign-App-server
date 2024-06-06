@@ -56,16 +56,6 @@ public class SqlTools : SlimShady
             return "Error";
         }
     }
-
-    // public async Task<string> InitDB(){
-    //     try{
-
-    //     }
-    //     catch {
-
-    //     }
-    // } 
-
     public string[]? GetUserData(string username)
     {
         try
@@ -96,11 +86,25 @@ public class SqlTools : SlimShady
         return null;
     }
 
-    public static string GetKey(string uname, string password)
+    public async Task<string> InsertAuthKey(string userId, string Key, DateTime until)
     {
-        string key = "";
+        string query = "INSERT INTO `SignAppDB`.`session` (`sessionKey`, `userid`, `keyExpiration`) VALUES ('" + Key + "', '" + userId + "', '" + until.ToString("yyyy-MM-dd HH:mm:ss") + "')";
+        try
+        {
+            using (MySqlConnection conn = new MySqlConnection(connString))
+            {
+                conn.Open();
 
+                MySqlCommand command = new MySqlCommand(query, conn);
+                string res = (string)command.ExecuteScalar();
 
-        return key;
+                conn.Close();
+                return res;
+            }
+        }
+        catch(Exception e)
+        {   
+            return "Error";
+        }
     }
 }

@@ -8,7 +8,7 @@ public abstract class authHandler
 
     public static string GenKey(string username, string password,DateTime d){
         string res = "";
-        //formul is SHA256(SHA256(SHA256(username) + SHA256(password)) + datatime now)
+        //formula is SHA256(SHA256(SHA256(username) + SHA256(password)) + datatime now)
         res = SlimShady.Sha256Hash(SlimShady.Sha256Hash(SlimShady.Sha256Hash(username) + SlimShady.Sha256Hash(password)) + d);
         return res;
     }
