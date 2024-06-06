@@ -12,4 +12,15 @@ public abstract class JsonHandler
         }
         return json;
     }
+
+    public static string MakeJson(Dictionary<string,object> data){
+        string res = "{";
+        foreach (var item in data){
+            res += "\n\t\"" + item.Key + "\"" + ":" + "\"" + item.Value + "\",";
+        }
+        res = res.Remove(res.Length-1);
+        res += "\n}";
+        File.WriteAllText("./test.json",res);
+        return res;
+    }
 }

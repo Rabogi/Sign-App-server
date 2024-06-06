@@ -106,12 +106,31 @@ app.MapPost("/getuser", async (HttpContext httpContext) =>
     using StreamReader reader = new StreamReader(httpContext.Request.Body);
     string data = await reader.ReadToEndAsync();
     string[] res = sqlHandler.GetUserData(data);
-    if (res != null){
+    if (res != null)
+    {
         return res[0] + " " + res[1] + " " + res[2] + " " + res[3];
     }
     return "Error";
 });
 
+app.MapPost("/login", async (HttpContext httpContext) =>
+{
+    using StreamReader reader = new StreamReader(httpContext.Request.Body);
+    string data = await reader.ReadToEndAsync();
+    var input = JsonHandler.ReadJson(data);
+    if(input != null){
+        if (input.ContainsKey("username")){
+            var dbdata = sqlHandler.GetUserData(input["username"].ToString());
+            if (dbdata != null){
+                if(dbdata[2] == SlimShady.Sha256Hash(input["password"].ToString())){
+                    return true;
+                }
+                
+            }
+        }
+    }
+    return false;
+});
 
 app.Run();
 
