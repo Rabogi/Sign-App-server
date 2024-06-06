@@ -117,32 +117,18 @@ app.MapPost("/login", async (HttpContext httpContext) =>
 {
     using StreamReader reader = new StreamReader(httpContext.Request.Body);
     string data = await reader.ReadToEndAsync();
-    var input = JsonHandler.ReadJson(data);
-    if (input != null)
-    {
-        if (input.ContainsKey("username"))
-        {
-            var dbdata = sqlHandler.GetUserData(input["username"].ToString());
-            if (dbdata != null)
-            {
-                if (dbdata[2] == SlimShady.Sha256Hash(input["password"].ToString()))
-                {
-                    var d = DateTime.Now;
-                    var key = authHandler.GenKey(input["username"].ToString(), input["password"].ToString(), d);
-                    d = d.AddMinutes(30);
-                    await sqlHandler.InsertAuthKey(dbdata[0], key, d);
-                    return key;
-                }
-
-            }
-        }
-    }
-    return "Error";
+    return await authHandler.Login(data,sqlHandler);
 });
 
 app.MapGet("/time", () =>
-{
+{   
     return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+});
+
+app.MapPost("/trykey", async (HttpContext httpContext) => {
+    using StreamReader reader = new StreamReader(httpContext.Request.Body);
+    string data = await reader.ReadToEndAsync();
+    return await authHandler.TryKey(data,sqlHandler,false);
 });
 
 app.Run();

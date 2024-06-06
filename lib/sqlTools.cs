@@ -56,6 +56,32 @@ public class SqlTools : SlimShady
             return "Error";
         }
     }
+
+    public List<string[]>? getSessions(string key)
+    {
+        try
+        {
+            using (MySqlConnection conn = new MySqlConnection(connString)){
+                conn.Open();
+                string query = "SELECT * FROM SignAppDB.sessions WHERE sessionKey = '" + key + "';";
+                MySqlCommand command = new MySqlCommand(query, conn);
+
+                List<string[]> found = new List<string[]>();
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        found.Add([reader["sessionKey"].ToString(), reader["userId"].ToString(), reader["keyExpiration"].ToString()]);
+                    }
+                }
+                return found;
+            }
+        }
+        catch{
+            return null;
+        }
+    }
+
     public string[]? GetUserData(string username)
     {
         try
@@ -88,7 +114,7 @@ public class SqlTools : SlimShady
 
     public async Task<string> InsertAuthKey(string userId, string Key, DateTime until)
     {
-        string query = "INSERT INTO `SignAppDB`.`session` (`sessionKey`, `userid`, `keyExpiration`) VALUES ('" + Key + "', '" + userId + "', '" + until.ToString("yyyy-MM-dd HH:mm:ss") + "')";
+        string query = "INSERT INTO `SignAppDB`.`sessions` (`sessionKey`, `userid`, `keyExpiration`) VALUES ('" + Key + "', '" + userId + "', '" + until.ToString("yyyy-MM-dd HH:mm:ss") + "')";
         try
         {
             using (MySqlConnection conn = new MySqlConnection(connString))
@@ -102,8 +128,29 @@ public class SqlTools : SlimShady
                 return res;
             }
         }
-        catch(Exception e)
-        {   
+        catch (Exception e)
+        {
+            return "Error";
+        }
+    }
+
+    public async Task<string> RemoveSession(string key){
+        string query = "DELETE FROM `SignAppDB`.`sessions` WHERE (`sessionKey` = '"+key+"');";
+        try
+        {
+            using (MySqlConnection conn = new MySqlConnection(connString))
+            {
+                conn.Open();
+
+                MySqlCommand command = new MySqlCommand(query, conn);
+                string res = (string)command.ExecuteScalar();
+
+                conn.Close();
+                return res;
+            }
+        }
+        catch (Exception e)
+        {
             return "Error";
         }
     }
