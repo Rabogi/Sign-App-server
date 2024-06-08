@@ -1,3 +1,4 @@
+using System.Runtime.Intrinsics.Arm;
 using System.Text;
 using Sign_App_server;
 using Sign_App_server.lib;
@@ -59,19 +60,18 @@ app.MapPost("/hash256", async (HttpContext httpContext) =>
 app.MapPost("/uploadfiles", async (HttpContext httpContext) =>
 {
     IFormFileCollection files = httpContext.Request.Form.Files;
-
+    Dictionary<string,object> hashes = new Dictionary<string, object>();
     foreach (var file in files)
     {
-
         string fullPath = storagePath + "/" + file.FileName;
 
         using (var fileStream = new FileStream(fullPath, FileMode.Create))
         {
             await file.CopyToAsync(fileStream);
+            hashes.Add(file.FileName,SlimShady.Sha256Hash(File.ReadAllText(fullPath)));
         }
     }
-
-    return "All files written";
+    return JsonHandler.MakeJson(hashes);
 });
 
 app.MapPost("/downloadfiles", async (HttpContext httpContext) =>

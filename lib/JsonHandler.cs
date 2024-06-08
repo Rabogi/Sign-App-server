@@ -20,7 +20,7 @@ public abstract class JsonHandler
         }
         res = res.Remove(res.Length-1);
         res += "\n}";
-        File.WriteAllText("./test.json",res);
+        // File.WriteAllText("./test.json",res);
         return res;
     }
 }
