@@ -117,7 +117,7 @@ app.MapPost("/login", async (HttpContext httpContext) =>
 {
     using StreamReader reader = new StreamReader(httpContext.Request.Body);
     string data = await reader.ReadToEndAsync();
-    return await authHandler.Login(data,sqlHandler);
+    return await authHandler.Login(data,sqlHandler,30);
 });
 
 app.MapGet("/time", () =>

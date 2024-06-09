@@ -23,4 +23,14 @@ public abstract class JsonHandler
         // File.WriteAllText("./test.json",res);
         return res;
     }
+
+    public static string ConvertSessionToJson(string[] session){
+        Dictionary<string,object> data = new Dictionary<string, object>
+        {
+            { "sessionKey", session[0] },
+            { "userID", session[1] },
+            { "keyExpiration", session[2] }
+        };
+        return MakeJson(data); 
+    }
 }

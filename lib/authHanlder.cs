@@ -1,3 +1,5 @@
+using MySqlX.XDevAPI.Common;
+
 namespace Sign_App_server.lib;
 
 public abstract class authHandler
@@ -13,19 +15,32 @@ public abstract class authHandler
         return res;
     }
 
-    public static async Task<string> Login(string loginData, SqlTools sqlHandler)
+    public static async Task<string> Login(string loginData, SqlTools sqlHandler, int sessionTime)
     {
         var input = JsonHandler.ReadJson(loginData);
         Dictionary<string, object> res = new Dictionary<string, object>();
         if (input != null)
         {
-            if (input.ContainsKey("key"))
+            if (input.ContainsKey("Key"))
             {
-                // if (await TryKey(input["key"].ToString(),sqlHandler,false)){
-                //     res.Add("key",input["key"].ToString());
-                //     res.Add("Result","Key is valid");
-                //     return JsonHandler.MakeJson(res);
-                // }
+                if (await TryKey(input["Key"].ToString(), sqlHandler, false))
+                {
+                    var d = await UpdateSessionTime(input["Key"].ToString(), sqlHandler, sessionTime);
+                    if (d == "Error")
+                    {
+                        res.Add("Result", "Error");
+                        res.Add("Message", "Error updating key");
+                        return JsonHandler.MakeJson(res);
+                    }
+                    var j = JsonHandler.ReadJson(d);
+                    res.Add("Result", "Success");
+                    res.Add("Key", j["sessionKey"]);
+                    res.Add("ValidUntil",j["keyExpiration"]);
+                    return JsonHandler.MakeJson(res);
+                }
+                res.Add("Result", "Error");
+                res.Add("Message", "Key is not valid!");
+                return JsonHandler.MakeJson(res);
             }
             else if (input.ContainsKey("username"))
             {
@@ -68,10 +83,12 @@ public abstract class authHandler
         var res = sqlHandler.getSession(key);
         if (res != null)
         {
-            if (isValidSessionTime(res[2])){
+            if (isValidSessionTime(res[2]))
+            {
                 return true;
             }
-            else if (removeExpired == true){
+            else if (removeExpired == true)
+            {
                 await sqlHandler.RemoveSession(key);
             }
             return false;
@@ -84,7 +101,25 @@ public abstract class authHandler
         return DateTime.Parse(ExpirationTime) > DateTime.Now;
     }
 
-    // private static Task<string> updateSession(int minutes,string key){
-
-    // }
+    public static async Task<string> UpdateSessionTime(string key, SqlTools sqlHandler, int minutes)
+    {
+        var d = DateTime.Now.AddMinutes(minutes);
+        var res = sqlHandler.getSession(key);
+        if (res != null)
+        {
+            if (isValidSessionTime(res[2]))
+            {
+                if (DateTime.Parse(res[2]) < d)
+                {
+                    res[2] = d.ToString("yyyy-MM-dd HH:mm:ss");
+                }
+                var newSession = JsonHandler.ConvertSessionToJson(res);
+                if (await sqlHandler.UpdateSession(key, newSession) != "Error")
+                {
+                    return newSession;
+                }
+            }
+        }
+        return "Error";
+    }
 }

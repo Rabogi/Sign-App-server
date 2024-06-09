@@ -66,14 +66,14 @@ public class SqlTools : SlimShady
                 conn.Open();
                 string query = "SELECT * FROM SignAppDB.sessions WHERE sessionKey = '" + key + "';";
                 MySqlCommand command = new MySqlCommand(query, conn);
-                string[] found = [];
+                string[] found = ["","",""];
                 using (MySqlDataReader reader = command.ExecuteReader())
                 {
                     // reader ran only once since having multiple session with same key is irregular
                     reader.Read();
-                    found.Append(reader["sessionKey"].ToString());
-                    found.Append(reader["userId"].ToString());
-                    found.Append(reader["keyExpiration"].ToString());
+                    found[0] = reader["sessionKey"].ToString();
+                    found[1] = reader["userId"].ToString();
+                    found[2] = reader["keyExpiration"].ToString();
                 }
                 return found;
             }
@@ -165,6 +165,28 @@ public class SqlTools : SlimShady
     public async Task<string> RemoveSession(string key)
     {
         string query = "DELETE FROM `SignAppDB`.`sessions` WHERE (`sessionKey` = '" + key + "');";
+        try
+        {
+            using (MySqlConnection conn = new MySqlConnection(connString))
+            {
+                conn.Open();
+
+                MySqlCommand command = new MySqlCommand(query, conn);
+                string res = (string)command.ExecuteScalar();
+
+                conn.Close();
+                return res;
+            }
+        }
+        catch (Exception e)
+        {
+            return "Error";
+        }
+    }
+
+    public async Task<string> UpdateSession(string key, string session){
+        var data = JsonHandler.ReadJson(session);
+        string query = "UPDATE `SignAppDB`.`sessions` SET `keyExpiration` = '"+data["keyExpiration"]+"' WHERE (`sessionKey` = '"+key+"');";
         try
         {
             using (MySqlConnection conn = new MySqlConnection(connString))
