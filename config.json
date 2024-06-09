@@ -4,5 +4,6 @@
     "SQLserverIP":"localhost",
     "SQLusername":"SignAppServer",
     "SQLpassword":"password",
-    "SQLdatabase":"SignAppDB"
+    "SQLdatabase":"SignAppDB",
+    "SessionLifeTime":1440
 }

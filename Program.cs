@@ -17,6 +17,8 @@ SqlTools sqlHandler = new SqlTools(
     conf["SQLdatabase"].ToString()
 );
 
+int lifetime = Convert.ToInt32(conf["SessionLifeTime"].ToString());
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
@@ -31,6 +33,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+var log = app.Logger;
+log.Log(LogLevel.Information,"Lifetime is " + lifetime.ToString());
 
 var summaries = new[]
 {
@@ -117,7 +121,7 @@ app.MapPost("/login", async (HttpContext httpContext) =>
 {
     using StreamReader reader = new StreamReader(httpContext.Request.Body);
     string data = await reader.ReadToEndAsync();
-    return await authHandler.Login(data,sqlHandler,30);
+    return await authHandler.Login(data,sqlHandler,lifetime);
 });
 
 app.MapGet("/time", () =>
