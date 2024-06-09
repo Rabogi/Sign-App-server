@@ -128,7 +128,7 @@ app.MapGet("/time", () =>
 app.MapPost("/trykey", async (HttpContext httpContext) => {
     using StreamReader reader = new StreamReader(httpContext.Request.Body);
     string data = await reader.ReadToEndAsync();
-    return await authHandler.TryKey(data,sqlHandler,false);
+    // return await authHandler.TryKey(data,sqlHandler,false);
 });
 
 app.Run();

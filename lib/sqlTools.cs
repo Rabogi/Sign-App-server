@@ -57,13 +57,41 @@ public class SqlTools : SlimShady
         }
     }
 
-    public List<string[]>? getSessions(string key)
+    public string[]? getSession(string key)
     {
         try
         {
-            using (MySqlConnection conn = new MySqlConnection(connString)){
+            using (MySqlConnection conn = new MySqlConnection(connString))
+            {
                 conn.Open();
                 string query = "SELECT * FROM SignAppDB.sessions WHERE sessionKey = '" + key + "';";
+                MySqlCommand command = new MySqlCommand(query, conn);
+                string[] found = [];
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    // reader ran only once since having multiple session with same key is irregular
+                    reader.Read();
+                    found.Append(reader["sessionKey"].ToString());
+                    found.Append(reader["userId"].ToString());
+                    found.Append(reader["keyExpiration"].ToString());
+                }
+                return found;
+            }
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public List<string[]>? getSessionsOfUser(string user)
+    {
+        try
+        {
+            using (MySqlConnection conn = new MySqlConnection(connString))
+            {
+                conn.Open();
+                string query = "SELECT * FROM SignAppDB.sessions WHERE userid = '" + user + "';";
                 MySqlCommand command = new MySqlCommand(query, conn);
 
                 List<string[]> found = new List<string[]>();
@@ -77,7 +105,8 @@ public class SqlTools : SlimShady
                 return found;
             }
         }
-        catch{
+        catch
+        {
             return null;
         }
     }
@@ -109,7 +138,6 @@ public class SqlTools : SlimShady
         {
             return null;
         }
-        return null;
     }
 
     public async Task<string> InsertAuthKey(string userId, string Key, DateTime until)
@@ -134,8 +162,9 @@ public class SqlTools : SlimShady
         }
     }
 
-    public async Task<string> RemoveSession(string key){
-        string query = "DELETE FROM `SignAppDB`.`sessions` WHERE (`sessionKey` = '"+key+"');";
+    public async Task<string> RemoveSession(string key)
+    {
+        string query = "DELETE FROM `SignAppDB`.`sessions` WHERE (`sessionKey` = '" + key + "');";
         try
         {
             using (MySqlConnection conn = new MySqlConnection(connString))
