@@ -162,6 +162,7 @@ public class SqlTools : SlimShady
         }
     }
 
+
     public async Task<string> RemoveSession(string key)
     {
         string query = "DELETE FROM `SignAppDB`.`sessions` WHERE (`sessionKey` = '" + key + "');";
@@ -203,6 +204,28 @@ public class SqlTools : SlimShady
         catch (Exception e)
         {
             return "Error";
+        }
+    }
+
+    public async Task<string> InsertFile(string userId, string filename, string hash)
+    {
+        string query = "INSERT INTO `SignAppDB`.`files` (`filename`, `hash`, `owner`, `creationtime`) VALUES ('"+ filename +"', '"+ hash +"', '"+ userId +"', '"+ DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") +"');";
+        try
+        {
+            using (MySqlConnection conn = new MySqlConnection(connString))
+            {
+                conn.Open();
+
+                MySqlCommand command = new MySqlCommand(query, conn);
+                string res = (string)command.ExecuteScalar();
+
+                conn.Close();
+                return res;
+            }
+        }
+        catch (Exception e)
+        {
+            return query;
         }
     }
 }

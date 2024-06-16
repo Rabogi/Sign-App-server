@@ -66,17 +66,26 @@ app.MapPost("/uploadfiles", async (HttpContext httpContext) =>
     string sessionKey = httpContext.Request.Form["key"];
     bool b = await authHandler.TryKey(sessionKey, sqlHandler, true);
     if (b)
-    {
+    {   
+        var userId = sqlHandler.getSession(sessionKey)[1];
+        if(!Directory.Exists(storagePath + "/" + userId)){
+            Directory.CreateDirectory(storagePath + "/" + userId);
+        }
         IFormFileCollection files = httpContext.Request.Form.Files;
         Dictionary<string, object> hashes = new Dictionary<string, object>();
         foreach (var file in files)
         {
-            string fullPath = storagePath + "/" + file.FileName;
-
-            using (var fileStream = new FileStream(fullPath, FileMode.Create))
-            {
-                await file.CopyToAsync(fileStream);
-                hashes.Add(file.FileName, SlimShady.Sha256Hash(File.ReadAllText(fullPath)));
+            string fullPath = storagePath + "/" + userId + "/" + file.FileName;
+            if(!File.Exists(fullPath))
+                using (var fileStream = new FileStream(fullPath, FileMode.Create))
+                {
+                    await file.CopyToAsync(fileStream);
+                    var hash = SlimShady.Sha256Hash(File.ReadAllText(fullPath));
+                    hashes.Add(file.FileName + " sqlRes",await sqlHandler.InsertFile(userId,fullPath,hash));
+                    hashes.Add(file.FileName, hash);
+                }
+            else{
+                hashes.Add(file.FileName, "Not written");
             }
         }
         return JsonHandler.MakeJson(hashes);
