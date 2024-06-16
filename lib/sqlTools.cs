@@ -66,7 +66,7 @@ public class SqlTools : SlimShady
                 conn.Open();
                 string query = "SELECT * FROM SignAppDB.sessions WHERE sessionKey = '" + key + "';";
                 MySqlCommand command = new MySqlCommand(query, conn);
-                string[] found = ["","",""];
+                string[] found = ["", "", ""];
                 using (MySqlDataReader reader = command.ExecuteReader())
                 {
                     // reader ran only once since having multiple session with same key is irregular
@@ -108,6 +108,28 @@ public class SqlTools : SlimShady
         catch
         {
             return null;
+        }
+    }
+
+    public async Task<string> ?InsertUser(string username, string password, int level)
+    {
+        string query = "INSERT INTO `SignAppDB`.`users` (`username`, `password`, `level`) VALUES ('" + username + "', '" + password + "', '" + level+ "');";
+        try
+        {
+            using (MySqlConnection conn = new MySqlConnection(connString))
+            {
+                conn.Open();
+
+                MySqlCommand command = new MySqlCommand(query, conn);
+                string res = (string)command.ExecuteScalar();
+
+                conn.Close();
+                return res;
+            }
+        }
+        catch (Exception e)
+        {
+            return "Error + " + query;
         }
     }
 
@@ -185,9 +207,10 @@ public class SqlTools : SlimShady
         }
     }
 
-    public async Task<string> UpdateSession(string key, string session){
+    public async Task<string> UpdateSession(string key, string session)
+    {
         var data = JsonHandler.ReadJson(session);
-        string query = "UPDATE `SignAppDB`.`sessions` SET `keyExpiration` = '"+data["keyExpiration"]+"' WHERE (`sessionKey` = '"+key+"');";
+        string query = "UPDATE `SignAppDB`.`sessions` SET `keyExpiration` = '" + data["keyExpiration"] + "' WHERE (`sessionKey` = '" + key + "');";
         try
         {
             using (MySqlConnection conn = new MySqlConnection(connString))
@@ -209,7 +232,7 @@ public class SqlTools : SlimShady
 
     public async Task<string> InsertFile(string userId, string filename, string hash)
     {
-        string query = "INSERT INTO `SignAppDB`.`files` (`filename`, `hash`, `owner`, `creationtime`) VALUES ('"+ filename +"', '"+ hash +"', '"+ userId +"', '"+ DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") +"');";
+        string query = "INSERT INTO `SignAppDB`.`files` (`filename`, `hash`, `owner`, `creationtime`) VALUES ('" + filename + "', '" + hash + "', '" + userId + "', '" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "');";
         try
         {
             using (MySqlConnection conn = new MySqlConnection(connString))
@@ -225,7 +248,11 @@ public class SqlTools : SlimShady
         }
         catch (Exception e)
         {
-            return query;
+            return "Error";
         }
     }
+
 }
+
+
+

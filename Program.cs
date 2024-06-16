@@ -9,6 +9,7 @@ var conf = JsonHandler.ReadJson(File.ReadAllText(configPath));
 
 string storagePath = conf["storagePath"].ToString();
 bool unsafeMode = conf["unsafeMode"].ToString() == "true" ? true : false;
+string userCreationKey = SlimShady.Sha256Hash(conf["UserCreationKey"].ToString());
 
 SqlTools sqlHandler = new SqlTools(
     conf["SQLserverIP"].ToString(),
@@ -35,40 +36,42 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 var log = app.Logger;
 log.Log(LogLevel.Information, "Lifetime is " + lifetime.ToString());
+log.Log(LogLevel.Information, "Creation key is " + userCreationKey);
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+// var summaries = new[]
+// {
+//     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+// };
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-});
+// app.MapGet("/weatherforecast", () =>
+// {
+//     var forecast = Enumerable.Range(1, 5).Select(index =>
+//         new WeatherForecast
+//         (
+//             DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+//             Random.Shared.Next(-20, 55),
+//             summaries[Random.Shared.Next(summaries.Length)]
+//         ))
+//         .ToArray();
+//     return forecast;
+// });
 
-app.MapPost("/hash256", async (HttpContext httpContext) =>
-{
-    using StreamReader reader = new StreamReader(httpContext.Request.Body);
-    string data = await reader.ReadToEndAsync();
-    return (SlimShady.Sha256Hash(data));
-});
+// app.MapPost("/hash256", async (HttpContext httpContext) =>
+// {
+//     using StreamReader reader = new StreamReader(httpContext.Request.Body);
+//     string data = await reader.ReadToEndAsync();
+//     return (SlimShady.Sha256Hash(data));
+// });
 
 app.MapPost("/uploadfiles", async (HttpContext httpContext) =>
 {
     string sessionKey = httpContext.Request.Form["key"];
     bool b = await authHandler.TryKey(sessionKey, sqlHandler, true);
     if (b)
-    {   
+    {
         var userId = sqlHandler.getSession(sessionKey)[1];
-        if(!Directory.Exists(storagePath + "/" + userId)){
+        if (!Directory.Exists(storagePath + "/" + userId))
+        {
             Directory.CreateDirectory(storagePath + "/" + userId);
         }
         IFormFileCollection files = httpContext.Request.Form.Files;
@@ -76,27 +79,27 @@ app.MapPost("/uploadfiles", async (HttpContext httpContext) =>
         foreach (var file in files)
         {
             string fullPath = storagePath + "/" + userId + "/" + file.FileName;
-            if(!File.Exists(fullPath))
+            if (!File.Exists(fullPath))
                 using (var fileStream = new FileStream(fullPath, FileMode.Create))
                 {
                     await file.CopyToAsync(fileStream);
                     var hash = SlimShady.Sha256Hash(File.ReadAllText(fullPath));
-                    hashes.Add(file.FileName + " sqlRes",await sqlHandler.InsertFile(userId,fullPath,hash));
+                    hashes.Add(file.FileName + " sqlRes", await sqlHandler.InsertFile(userId, fullPath, hash));
                     hashes.Add(file.FileName, hash);
                 }
-            else{
+            else
+            {
                 hashes.Add(file.FileName, "Not written");
             }
         }
         return JsonHandler.MakeJson(hashes);
     }
-    else{
-        Dictionary<string, object> res = new Dictionary<string,object>();
-        res.Add("Result","Request denied");
+    else
+    {
+        Dictionary<string, object> res = new Dictionary<string, object>();
+        res.Add("Result", "Request denied");
         return JsonHandler.MakeJson(res);
     }
-
-
 });
 
 app.MapPost("/downloadfiles", async (HttpContext httpContext) =>
@@ -128,12 +131,15 @@ app.MapPost("/sql", async (HttpContext httpContext) =>
 
 app.MapPost("/getuser", async (HttpContext httpContext) =>
 {
-    using StreamReader reader = new StreamReader(httpContext.Request.Body);
-    string data = await reader.ReadToEndAsync();
-    string[] res = sqlHandler.GetUserData(data);
-    if (res != null)
+    if (unsafeMode == true)
     {
-        return res[0] + " " + res[1] + " " + res[2] + " " + res[3];
+        using StreamReader reader = new StreamReader(httpContext.Request.Body);
+        string data = await reader.ReadToEndAsync();
+        string[] res = sqlHandler.GetUserData(data);
+        if (res != null)
+        {
+            return res[0] + " " + res[1] + " " + res[2] + " " + res[3];
+        }
     }
     return "Error";
 });
@@ -145,21 +151,91 @@ app.MapPost("/login", async (HttpContext httpContext) =>
     return await authHandler.Login(data, sqlHandler, lifetime);
 });
 
+app.MapPost("/adduser", async (HttpContext httpContext) =>
+{
+    {
+        using StreamReader reader = new StreamReader(httpContext.Request.Body);
+        var data = JsonHandler.ReadJson(await reader.ReadToEndAsync());
+        Dictionary<string, object> res = new Dictionary<string, object>();
+
+        if (data.ContainsKey("AccessKey"))
+        {
+            if (SlimShady.Sha256Hash(data["AccessKey"].ToString()) == userCreationKey)
+            {
+                if (data.ContainsKey("Username") & data.ContainsKey("Password"))
+                {
+                    if (data["Username"].ToString().Length > 0)
+                    {
+                        if (sqlHandler.GetUserData(data["Username"].ToString()) == null)
+                        {
+                            int level = data.ContainsKey("Level") ? (int)data["Level"] : 1;
+                            var output = await sqlHandler.InsertUser(data["Username"].ToString(), SlimShady.Sha256Hash(data["Password"].ToString()), level);
+                            if (output == null)
+                            {
+                                res.Add("Result", "Success");
+                                res.Add("Info", "New user added");
+                                return res;
+                            }
+                            else
+                            {
+                                res.Add("Result", "Failure");
+                                res.Add("Info", "SQLerror");
+                                res.Add("SQL",output);
+                                return res;
+                            }
+                        }
+                        else
+                        {
+                            res.Add("Result", "Failure");
+                            res.Add("Info", "Username taken");
+                            return res;
+                        }
+                    }
+                    else
+                    {
+                        res.Add("Result", "Failure");
+                        res.Add("Info", "Not a valid username!");
+                        return res;
+                    }
+                }
+                else
+                {
+                    res.Add("Result", "Failure");
+                    res.Add("Info", "Malformed data");
+                    return res;
+                }
+            }
+            else
+            {
+                res.Add("Result", "Failure");
+                res.Add("Info", "Request denied");
+                return res;
+            }
+        }
+        else
+        {
+            res.Add("Result", "Failure");
+            res.Add("Info", "Malformed data");
+            return res;
+        }
+    }
+});
+
 app.MapGet("/time", () =>
 {
     return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 });
 
-app.MapPost("/trykey", async (HttpContext httpContext) =>
-{
-    using StreamReader reader = new StreamReader(httpContext.Request.Body);
-    string data = await reader.ReadToEndAsync();
-    // return await authHandler.TryKey(data,sqlHandler,false);
-});
+// app.MapPost("/trykey", async (HttpContext httpContext) =>
+// {
+//     using StreamReader reader = new StreamReader(httpContext.Request.Body);
+//     string data = await reader.ReadToEndAsync();
+//     // return await authHandler.TryKey(data,sqlHandler,false);
+// });
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+// record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+// {
+//     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+// }
