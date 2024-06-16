@@ -34,7 +34,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 var log = app.Logger;
-log.Log(LogLevel.Information,"Lifetime is " + lifetime.ToString());
+log.Log(LogLevel.Information, "Lifetime is " + lifetime.ToString());
 
 var summaries = new[]
 {
@@ -63,19 +63,31 @@ app.MapPost("/hash256", async (HttpContext httpContext) =>
 
 app.MapPost("/uploadfiles", async (HttpContext httpContext) =>
 {
-    IFormFileCollection files = httpContext.Request.Form.Files;
-    Dictionary<string,object> hashes = new Dictionary<string, object>();
-    foreach (var file in files)
+    string sessionKey = httpContext.Request.Form["key"];
+    bool b = await authHandler.TryKey(sessionKey, sqlHandler, true);
+    if (b)
     {
-        string fullPath = storagePath + "/" + file.FileName;
-
-        using (var fileStream = new FileStream(fullPath, FileMode.Create))
+        IFormFileCollection files = httpContext.Request.Form.Files;
+        Dictionary<string, object> hashes = new Dictionary<string, object>();
+        foreach (var file in files)
         {
-            await file.CopyToAsync(fileStream);
-            hashes.Add(file.FileName,SlimShady.Sha256Hash(File.ReadAllText(fullPath)));
+            string fullPath = storagePath + "/" + file.FileName;
+
+            using (var fileStream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(fileStream);
+                hashes.Add(file.FileName, SlimShady.Sha256Hash(File.ReadAllText(fullPath)));
+            }
         }
+        return JsonHandler.MakeJson(hashes);
     }
-    return JsonHandler.MakeJson(hashes);
+    else{
+        Dictionary<string, object> res = new Dictionary<string,object>();
+        res.Add("Result","Request denied");
+        return JsonHandler.MakeJson(res);
+    }
+
+
 });
 
 app.MapPost("/downloadfiles", async (HttpContext httpContext) =>
@@ -121,15 +133,16 @@ app.MapPost("/login", async (HttpContext httpContext) =>
 {
     using StreamReader reader = new StreamReader(httpContext.Request.Body);
     string data = await reader.ReadToEndAsync();
-    return await authHandler.Login(data,sqlHandler,lifetime);
+    return await authHandler.Login(data, sqlHandler, lifetime);
 });
 
 app.MapGet("/time", () =>
-{   
+{
     return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 });
 
-app.MapPost("/trykey", async (HttpContext httpContext) => {
+app.MapPost("/trykey", async (HttpContext httpContext) =>
+{
     using StreamReader reader = new StreamReader(httpContext.Request.Body);
     string data = await reader.ReadToEndAsync();
     // return await authHandler.TryKey(data,sqlHandler,false);

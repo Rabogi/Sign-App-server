@@ -14,9 +14,9 @@ public abstract class SlimShady
         return sb.ToString();
     }
 
-    public void GenerateRSAKeyPair()
+    public void GenerateRSAKeyPair(int len)
     {
-        using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(2048))
+        using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(len))
         {
             string publicKey = rsa.ToXmlString(false);
             string privateKey = rsa.ToXmlString(true);
@@ -24,6 +24,15 @@ public abstract class SlimShady
             System.IO.File.WriteAllText("publicKey.xml", publicKey);
             System.IO.File.WriteAllText("privateKey.xml", privateKey);
         }
+    }
+
+    public static Dictionary<string, string> GetKeyRSAKeyPair(int len){
+        var res = new Dictionary<string, string>();
+        using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(len)){
+            res.Add("PrivateKey", rsa.ToXmlString(true));
+            res.Add("PublicKey", rsa.ToXmlString(false));
+        }
+        return res;
     }
 
     public void writeBin(string content, string filename)
@@ -42,9 +51,9 @@ public abstract class SlimShady
     }
 
     //sign data
-    public string SignData(string data, string privateKey)
+    public static string SignData(string data, string privateKey)
     {
-        using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(2048))
+        using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
         {
             rsa.FromXmlString(privateKey);
             byte[] dataBytes = Encoding.UTF8.GetBytes(data);
@@ -54,9 +63,9 @@ public abstract class SlimShady
     }
 
     //verify signature
-    public bool VerifySignature(string data, string signature, string publicKey)
+    public static bool VerifySignature(string data, string signature, string publicKey)
     {
-        using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(2048))
+        using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
         {
             rsa.FromXmlString(publicKey);
             byte[] dataBytes = Encoding.UTF8.GetBytes(data);
