@@ -209,8 +209,11 @@ public class SqlTools : SlimShady
     }
 
     public async Task<string>? InsertKeyPair(string userId, string name, Dictionary<string, string> keyPair)
-    {
-
+    {   
+        if (SelectQuery("SELECT * FROM SignAppDB.userKeys where (name = '"+name+"');").Count > 0)
+        {
+            return "Key name is taken";
+        }
         string query = "INSERT INTO `SignAppDB`.`userKeys` (`userid`, `name`, `pubkey`, `prikey`,`hash`) VALUES ('" + userId + "', '" + name + "', '" + keyPair["PublicKey"] + "', '" + keyPair["PrivateKey"] + "','" + SlimShady.Sha256Hash(keyPair["PrivateKey"]) + "');";
         try
         {
@@ -230,6 +233,7 @@ public class SqlTools : SlimShady
             return query;
         }
     }
+
 
     // public async Task<bool> CheckKeyPairName(string name){
     //     bool res = false;
