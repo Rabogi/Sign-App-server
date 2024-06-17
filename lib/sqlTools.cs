@@ -184,6 +184,28 @@ public class SqlTools : SlimShady
         }
     }
 
+    public async Task<string> ?InsertKeyPair(string userId, string name, Dictionary<string,string> keyPair)
+    {
+        string query = "INSERT INTO `SignAppDB`.`userKeys` (`userid`, `name`, `pubkey`, `prikey`,`hash`) VALUES ('"+userId+"', '"+name+"', '"+keyPair["PublicKey"]+"', '"+keyPair["PrivateKey"]+"','"+ SlimShady.Sha256Hash(keyPair["PrivateKey"]) +"');";
+        try
+        {
+            using (MySqlConnection conn = new MySqlConnection(connString))
+            {
+                conn.Open();
+
+                MySqlCommand command = new MySqlCommand(query, conn);
+                string res = (string)command.ExecuteScalar();
+
+                conn.Close();
+                return res;
+            }
+        }
+        catch (Exception e)
+        {
+            return query;
+        }
+    }
+
 
     public async Task<string> RemoveSession(string key)
     {

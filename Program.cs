@@ -34,34 +34,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 var log = app.Logger;
 log.Log(LogLevel.Information, "Lifetime is " + lifetime.ToString());
-log.Log(LogLevel.Information, "Creation key is " + userCreationKey);
-
-// var summaries = new[]
-// {
-//     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-// };
-
-// app.MapGet("/weatherforecast", () =>
-// {
-//     var forecast = Enumerable.Range(1, 5).Select(index =>
-//         new WeatherForecast
-//         (
-//             DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-//             Random.Shared.Next(-20, 55),
-//             summaries[Random.Shared.Next(summaries.Length)]
-//         ))
-//         .ToArray();
-//     return forecast;
-// });
-
-// app.MapPost("/hash256", async (HttpContext httpContext) =>
-// {
-//     using StreamReader reader = new StreamReader(httpContext.Request.Body);
-//     string data = await reader.ReadToEndAsync();
-//     return (SlimShady.Sha256Hash(data));
-// });
+// log.Log(LogLevel.Information, "Creation key is " + userCreationKey);
 
 app.MapPost("/uploadfiles", async (HttpContext httpContext) =>
 {
@@ -180,7 +156,7 @@ app.MapPost("/adduser", async (HttpContext httpContext) =>
                             {
                                 res.Add("Result", "Failure");
                                 res.Add("Info", "SQLerror");
-                                res.Add("SQL",output);
+                                res.Add("SQL", output);
                                 return res;
                             }
                         }
@@ -226,6 +202,66 @@ app.MapGet("/time", () =>
     return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 });
 
+app.MapPost("/newkeypair", async (HttpContext httpContext) =>
+{
+    using StreamReader reader = new StreamReader(httpContext.Request.Body);
+    var data = JsonHandler.ReadJson(await reader.ReadToEndAsync());
+    Dictionary<string, object> res = new Dictionary<string, object>();
+    if (data.ContainsKey("Key"))
+    {
+        if (await authHandler.TryKey(data["Key"].ToString(), sqlHandler, true))
+        {
+            if (data.ContainsKey("PairName"))
+            {
+                if (data["PairName"] != null & data["PairName"].ToString().Length > 0)
+                {
+                    var userData = sqlHandler.getSession(data["Key"].ToString());
+                    var pair = SlimShady.GetKeyRSAKeyPair(2048);
+                    string output = await sqlHandler.InsertKeyPair(userData[1], data["PairName"].ToString(), pair);
+                    if (output == null)
+                    {
+                        res.Add("Result", "Success");
+                        res.Add("Info", "New pair added");
+                        return res;
+                    }
+                    else
+                    {
+                        res.Add("Result", "Failure");
+                        res.Add("Info", "SQLerror");
+                        res.Add("SQL", output);
+                        return res;
+                    }
+                }
+                else
+                {
+                    res.Add("Result", "Failure");
+                    res.Add("Info", "Invalid name");
+                    return res;
+                }
+            }
+            else
+            {
+                res.Add("Result", "Failure");
+                res.Add("Info", "Malformed data");
+                return res;
+            }
+        }
+        else
+        {
+            res.Add("Result", "Failure");
+            res.Add("Info", "Invalid key");
+            return res;
+        }
+    }
+    else
+    {
+        res.Add("Result", "Failure");
+        res.Add("Info", "Malformed data");
+        return res;
+    }
+});
+
+app.Run();
 // app.MapPost("/trykey", async (HttpContext httpContext) =>
 // {
 //     using StreamReader reader = new StreamReader(httpContext.Request.Body);
@@ -233,9 +269,31 @@ app.MapGet("/time", () =>
 //     // return await authHandler.TryKey(data,sqlHandler,false);
 // });
 
-app.Run();
-
 // record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 // {
 //     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 // }
+// var summaries = new[]
+// {
+//     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+// };
+
+// app.MapGet("/weatherforecast", () =>
+// {
+//     var forecast = Enumerable.Range(1, 5).Select(index =>
+//         new WeatherForecast
+//         (
+//             DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+//             Random.Shared.Next(-20, 55),
+//             summaries[Random.Shared.Next(summaries.Length)]
+//         ))
+//         .ToArray();
+//     return forecast;
+// });
+
+// app.MapPost("/hash256", async (HttpContext httpContext) =>
+// {
+//     using StreamReader reader = new StreamReader(httpContext.Request.Body);
+//     string data = await reader.ReadToEndAsync();
+//     return (SlimShady.Sha256Hash(data));
+// });
