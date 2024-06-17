@@ -210,7 +210,7 @@ public class SqlTools : SlimShady
 
     public async Task<string>? InsertKeyPair(string userId, string name, Dictionary<string, string> keyPair)
     {   
-        if (SelectQuery("SELECT * FROM SignAppDB.userKeys where (name = '"+name+"');").Count > 0)
+        if (SelectQuery("SELECT * FROM SignAppDB.userKeys where name = '"+name+"' and userid = '"+userId+"';").Count > 0)
         {
             return "Key name is taken";
         }
