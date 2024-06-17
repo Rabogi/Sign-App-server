@@ -36,20 +36,26 @@ public class SqlTools : SlimShady
         return true;
     }
 
-    public async Task<bool[]>? InitDB(string[] initdata){
+    public async Task<bool[]>? InitDB(string[] initdata)
+    {
         bool[] res = [];
-        try{
-            foreach (var query in initdata){
-                if(await Query(query) != "Error"){
+        try
+        {
+            foreach (var query in initdata)
+            {
+                if (await Query(query) != "Error")
+                {
                     res.Append(true);
                 }
-                else{
+                else
+                {
                     res.Append(false);
                 }
             }
             return res;
         }
-        catch{
+        catch
+        {
             return null;
         }
     }
@@ -129,9 +135,9 @@ public class SqlTools : SlimShady
         }
     }
 
-    public async Task<string> ?InsertUser(string username, string password, string level)
+    public async Task<string>? InsertUser(string username, string password, string level)
     {
-        string query = "INSERT INTO `SignAppDB`.`users` (`username`, `password`, `level`) VALUES ('" + username + "', '" + password + "', '" + level+ "');";
+        string query = "INSERT INTO `SignAppDB`.`users` (`username`, `password`, `level`) VALUES ('" + username + "', '" + password + "', '" + level + "');";
         try
         {
             using (MySqlConnection conn = new MySqlConnection(connString))
@@ -202,9 +208,10 @@ public class SqlTools : SlimShady
         }
     }
 
-    public async Task<string> ?InsertKeyPair(string userId, string name, Dictionary<string,string> keyPair)
+    public async Task<string>? InsertKeyPair(string userId, string name, Dictionary<string, string> keyPair)
     {
-        string query = "INSERT INTO `SignAppDB`.`userKeys` (`userid`, `name`, `pubkey`, `prikey`,`hash`) VALUES ('"+userId+"', '"+name+"', '"+keyPair["PublicKey"]+"', '"+keyPair["PrivateKey"]+"','"+ SlimShady.Sha256Hash(keyPair["PrivateKey"]) +"');";
+
+        string query = "INSERT INTO `SignAppDB`.`userKeys` (`userid`, `name`, `pubkey`, `prikey`,`hash`) VALUES ('" + userId + "', '" + name + "', '" + keyPair["PublicKey"] + "', '" + keyPair["PrivateKey"] + "','" + SlimShady.Sha256Hash(keyPair["PrivateKey"]) + "');";
         try
         {
             using (MySqlConnection conn = new MySqlConnection(connString))
@@ -224,6 +231,10 @@ public class SqlTools : SlimShady
         }
     }
 
+    // public async Task<bool> CheckKeyPairName(string name){
+    //     bool res = false;
+
+    // } 
 
     public async Task<string> RemoveSession(string key)
     {
@@ -292,7 +303,30 @@ public class SqlTools : SlimShady
         }
     }
 
-}
+    public List<Dictionary<string, object>> SelectQuery(string query)
+    {
+        List<Dictionary<string, object>> res = new List<Dictionary<string, object>>();
 
+        using (MySqlConnection conn = new MySqlConnection(connString))
+        {
+            conn.Open();
+            MySqlCommand command = new MySqlCommand(query, conn);
+            using (MySqlDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    Dictionary<string, object> row = new Dictionary<string, object>();
+                    for (int i = 0; i < reader.FieldCount; i++)
+                    {
+                        row[reader.GetName(i)] = reader[i].ToString();
+                    }
+                    res.Add(row);
+                }
+            }
+        }
+
+        return res;
+    }
+}
 
 

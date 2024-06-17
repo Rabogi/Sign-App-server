@@ -102,9 +102,13 @@ app.MapPost("/sql", async (HttpContext httpContext) =>
     if (unsafeMode == true)
     {
         using StreamReader reader = new StreamReader(httpContext.Request.Body);
-        string data = await reader.ReadToEndAsync();
-        string res = sqlHandler.Query(data).ToString();
-        return res;
+        var data = JsonHandler.ReadJson(await reader.ReadToEndAsync());
+        var res = sqlHandler.SelectQuery(data["Query"].ToString());
+        string res1 = "";
+        foreach(var item in res){
+            res1 += JsonHandler.MakeJson(item) + "\n";
+        }
+        return res1;
     }
     return "Error";
 });
