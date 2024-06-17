@@ -144,7 +144,7 @@ app.MapPost("/adduser", async (HttpContext httpContext) =>
                     {
                         if (sqlHandler.GetUserData(data["Username"].ToString()) == null)
                         {
-                            int level = data.ContainsKey("Level") ? (int)data["Level"] : 1;
+                            string level = data.ContainsKey("Level") ? data["Level"].ToString() : "1";
                             var output = await sqlHandler.InsertUser(data["Username"].ToString(), SlimShady.Sha256Hash(data["Password"].ToString()), level);
                             if (output == null)
                             {

@@ -1,4 +1,4 @@
-@Sign_App_server_HostAddress = http://10.147.17.103:5141
+@Sign_App_server_HostAddress = http://10.147.17.105:5141
 
 GET {{Sign_App_server_HostAddress}}/weatherforecast/
 Accept: application/json

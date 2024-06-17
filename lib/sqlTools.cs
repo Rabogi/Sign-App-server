@@ -111,7 +111,7 @@ public class SqlTools : SlimShady
         }
     }
 
-    public async Task<string> ?InsertUser(string username, string password, int level)
+    public async Task<string> ?InsertUser(string username, string password, string level)
     {
         string query = "INSERT INTO `SignAppDB`.`users` (`username`, `password`, `level`) VALUES ('" + username + "', '" + password + "', '" + level+ "');";
         try
