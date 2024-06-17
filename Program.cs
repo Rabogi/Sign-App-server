@@ -18,6 +18,10 @@ SqlTools sqlHandler = new SqlTools(
     conf["SQLdatabase"].ToString()
 );
 
+string[] initdata = File.ReadAllLines("./sqlinit.sql");
+await sqlHandler.InitDB(initdata);
+
+
 int lifetime = Convert.ToInt32(conf["SessionLifeTime"].ToString());
 
 var builder = WebApplication.CreateBuilder(args);
@@ -261,14 +265,14 @@ app.MapPost("/newkeypair", async (HttpContext httpContext) =>
     }
 });
 
-app.Run();
-// app.MapPost("/trykey", async (HttpContext httpContext) =>
-// {
-//     using StreamReader reader = new StreamReader(httpContext.Request.Body);
-//     string data = await reader.ReadToEndAsync();
-//     // return await authHandler.TryKey(data,sqlHandler,false);
-// });
+app.MapPost("/trykey", async (HttpContext httpContext) =>
+{
+    using StreamReader reader = new StreamReader(httpContext.Request.Body);
+    string data = await reader.ReadToEndAsync();
+    return await authHandler.TryKey(data,sqlHandler,false);
+});
 
+app.Run();
 // record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 // {
 //     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);

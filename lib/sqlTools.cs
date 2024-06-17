@@ -36,6 +36,24 @@ public class SqlTools : SlimShady
         return true;
     }
 
+    public async Task<bool[]>? InitDB(string[] initdata){
+        bool[] res = [];
+        try{
+            foreach (var query in initdata){
+                if(await Query(query) != "Error"){
+                    res.Append(true);
+                }
+                else{
+                    res.Append(false);
+                }
+            }
+            return res;
+        }
+        catch{
+            return null;
+        }
+    }
+
     public async Task<string> Query(string query)
     {
         try
