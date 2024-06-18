@@ -23,6 +23,7 @@ await sqlHandler.InitDB(initdata);
 
 
 int lifetime = Convert.ToInt32(conf["SessionLifeTime"].ToString());
+authHandler.lifetime = lifetime;
 
 var builder = WebApplication.CreateBuilder(args);
 

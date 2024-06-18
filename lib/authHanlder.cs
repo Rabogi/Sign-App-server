@@ -1,7 +1,8 @@
 namespace Sign_App_server.lib;
 
 public abstract class authHandler
-{
+{   
+    public static int lifetime = 1440;
     // TODO move everything login related from base server file to here
     private static string GenKey(string username, string password, DateTime d)
     {
@@ -81,7 +82,8 @@ public abstract class authHandler
         if (res != null)
         {
             if (isValidSessionTime(res[2]))
-            {
+            {   
+                authHandler.UpdateSessionTime(key,sqlHandler,lifetime);
                 return true;
             }
             else if (removeExpired == true)
