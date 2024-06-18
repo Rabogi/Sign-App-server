@@ -1,5 +1,7 @@
 using Sign_App_server;
 using Sign_App_server.lib;
+using MimeTypes;
+using Org.BouncyCastle.Crypto.Engines;
 
 //conf TODO add read conf from file in root
 string configPath = "./config.json";
@@ -42,6 +44,21 @@ var log = app.Logger;
 log.Log(LogLevel.Information, "Lifetime is " + lifetime.ToString());
 // log.Log(LogLevel.Information, "Creation key is " + userCreationKey);
 
+string ClearFileName(string FileName)
+{
+    string Result = "";
+
+    char[] name = FileName.ToCharArray();
+    for (int i = name.Length - 1; i != -1; i--)
+    {
+        if (name[i] == '/')
+            break;
+        Result = name[i] + Result;
+    }
+
+    return Result;
+}
+
 app.MapPost("/uploadfiles", async (HttpContext httpContext) =>
 {
     string sessionKey = httpContext.Request.Form["key"];
@@ -81,17 +98,82 @@ app.MapPost("/uploadfiles", async (HttpContext httpContext) =>
     }
 });
 
-app.MapPost("/downloadfiles", async (HttpContext httpContext) =>
+app.MapPost("/downloadfile", async (HttpContext httpContext) =>
 {
-    if (unsafeMode == true)
+    // if (unsafeMode == true)
+    // {
+    //     using StreamReader reader = new StreamReader(httpContext.Request.Body);
+    //     string name = await reader.ReadToEndAsync();
+    //     string fname = name;
+    //     name = storagePath + "/" + name;
+    //     if (File.Exists(name))
+    //     {
+    //         await httpContext.Response.SendFileAsync(name);
+    //     }
+    // }
+    using StreamReader reader = new StreamReader(httpContext.Request.Body);
+    var data = JsonHandler.ReadJson(await reader.ReadToEndAsync());
+    var res = new Dictionary<string, object>();
+    if (data.ContainsKey("Key") & data.ContainsKey("Id"))
     {
-        using StreamReader reader = new StreamReader(httpContext.Request.Body);
-        string name = await reader.ReadToEndAsync();
-        string fname = name;
-        name = storagePath + "/" + name;
-        if (File.Exists(name))
+        if (await authHandler.TryKey(data["Key"].ToString(), sqlHandler, true))
         {
-            await httpContext.Response.SendFileAsync(name);
+
+            int id = Convert.ToInt32(data["Id"].ToString());
+
+            var files = await sqlHandler.GetUserFiles(sqlHandler.getSession(data["Key"].ToString())[1]);
+            if (files.Count > 0)
+            {
+                foreach (var file in files)
+                {
+                    if (Convert.ToInt32(file["id"].ToString()) == id)
+                    {
+                        var content = new ByteArrayContent(await File.ReadAllBytesAsync(file["filename"].ToString()));
+                        // var content = new ByteArrayContent(await File.ReadAllBytesAsync(file["filename"].ToString()));
+                        string fname = ClearFileName(file["filename"].ToString());
+                        // Response.Add(content, name: fname, fileName: fname);
+                        httpContext.Response.ContentType = MimeTypeMap.GetMimeType(fname);
+                        log.Log(LogLevel.Information, fname);
+                        log.Log(LogLevel.Information, MimeTypeMap.GetMimeType(file["filename"].ToString()));
+                        log.Log(LogLevel.Information, SlimShady.Sha256Hash(File.ReadAllText(file["filename"].ToString())));
+                        await httpContext.Response.SendFileAsync(file["filename"].ToString());
+                        
+                        // res.Add("Result", "Success");
+                        // res.Add("Info", "File transferred");
+                        // return JsonHandler.MakeJson(res);
+                    }
+                }
+                //             // res.Add("Result", "Failure");
+                //             // res.Add("Info", "No available file with this id found");
+                //             // Response.Add(new StringContent(JsonHandler.MakeJson(res)),"Json");
+                //             // return JsonHandler.MakeJson(res);
+                //         }
+                //         else
+                //         {
+                //             // res.Add("Result", "Failure");
+                //             // res.Add("Info", "No files");
+                //             // Response.Add(new StringContent(JsonHandler.MakeJson(res)),"Json");
+                //             // return JsonHandler.MakeJson(res);
+                //         }
+                //     }
+                //     else
+                //     {
+                //         // res.Add("Result", "Request denied");
+                //         // Response.Add(new StringContent(JsonHandler.MakeJson(res)),"Json");
+                //         // return JsonHandler.MakeJson(res);
+                //     }
+                // }
+                // else
+                // {
+                //     // res.Add("Result", "Failure");
+                //     // res.Add("Result", "Malformed data");
+                //     // Response.Add(new StringContent(JsonHandler.MakeJson(res)),"Json");
+                //     // return JsonHandler.MakeJson(res);
+                // }
+
+
+
+            }
         }
     }
 });
@@ -278,9 +360,9 @@ app.MapPost("/getfiles", async (HttpContext httpContext) =>
     {
         var files = await sqlHandler.GetUserFiles(sqlHandler.getSession(data["Key"].ToString())[1]);
         if (files != null)
-        {   
-            res.Add("Result","Success");
-            res.Add("Info",files.Count);
+        {
+            res.Add("Result", "Success");
+            res.Add("Info", files.Count);
             for (int i = 0; i < files.Count; i++)
             {
                 res.Add(i.ToString(), JsonHandler.MakeJson(files[i]));
