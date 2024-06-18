@@ -137,7 +137,7 @@ app.MapPost("/downloadfile", async (HttpContext httpContext) =>
                         log.Log(LogLevel.Information, MimeTypeMap.GetMimeType(file["filename"].ToString()));
                         log.Log(LogLevel.Information, SlimShady.Sha256Hash(File.ReadAllText(file["filename"].ToString())));
                         await httpContext.Response.SendFileAsync(file["filename"].ToString());
-                        
+
                         // res.Add("Result", "Success");
                         // res.Add("Info", "File transferred");
                         // return JsonHandler.MakeJson(res);
@@ -391,7 +391,8 @@ app.MapPost("/trykey", async (HttpContext httpContext) =>
     return await authHandler.TryKey(data, sqlHandler, false);
 });
 
-app.MapGet("/listusers", () => {
+app.MapGet("/listusers", () =>
+{
     var data = sqlHandler.SelectQuery("SELECT id , username FROM SignAppDB.users;");
     var res = new Dictionary<string, object>();
     for (int i = 0; i < data.Count; i++)
@@ -401,7 +402,33 @@ app.MapGet("/listusers", () => {
     return JsonHandler.MakeJson(res);
 });
 
-
+app.MapPost("/getkeypairs", async (HttpContext httpContext) =>
+{
+    using StreamReader reader = new StreamReader(httpContext.Request.Body);
+    var data = JsonHandler.ReadJson(await reader.ReadToEndAsync());
+    var res = new Dictionary<string, object>();
+    if (await authHandler.TryKey(data["Key"].ToString(), sqlHandler, true))
+    {
+        var keyPairs = await sqlHandler.GetUserKeyPairs(sqlHandler.getSession(data["Key"].ToString())[1]);
+        if (keyPairs.Count == 0)
+        {
+            res.Add("Result", "Failure");
+            res.Add("Info", "No key pairs found");
+            return JsonHandler.MakeJson(res);
+        }
+        res.Add("Result", "Success");
+        for (int i = 0; i < keyPairs.Count; i++)
+        {
+            res.Add(keyPairs[i]["id"].ToString(), keyPairs[i]["name"].ToString());
+        }
+        return JsonHandler.MakeJson(res);
+    }
+    else
+    {
+        res.Add("Result", "Request denied");
+        return JsonHandler.MakeJson(res);
+    }
+});
 
 app.Run();
 // record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)

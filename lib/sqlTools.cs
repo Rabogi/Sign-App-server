@@ -209,8 +209,8 @@ public class SqlTools : SlimShady
     }
 
     public async Task<string>? InsertKeyPair(string userId, string name, Dictionary<string, string> keyPair)
-    {   
-        if (SelectQuery("SELECT * FROM SignAppDB.userKeys where name = '"+name+"' and userid = '"+userId+"';").Count > 0)
+    {
+        if (SelectQuery("SELECT * FROM SignAppDB.userKeys where name = '" + name + "' and userid = '" + userId + "';").Count > 0)
         {
             return "Key name is taken";
         }
@@ -307,13 +307,20 @@ public class SqlTools : SlimShady
         }
     }
 
-    public async Task<List<Dictionary<string,object>>> GetUserFiles(string userId){
-        var ownedFiles = SelectQuery("SELECT * FROM SignAppDB.files WHERE OWNER = '"+userId+"';");
-        var foreignPerms = SelectQuery("SELECT * FROM SignAppDB.perms where user = '"+userId+"';");
-        foreach(var perm in foreignPerms){
-            ownedFiles.Add(SelectQuery("SELECT * FROM SignAppDB.files where id = '"+perm["fileid"].ToString()+"';")[0]);
+    public async Task<List<Dictionary<string, object>>> GetUserFiles(string userId)
+    {
+        var ownedFiles = SelectQuery("SELECT * FROM SignAppDB.files WHERE OWNER = '" + userId + "';");
+        var foreignPerms = SelectQuery("SELECT * FROM SignAppDB.perms where user = '" + userId + "';");
+        foreach (var perm in foreignPerms)
+        {
+            ownedFiles.Add(SelectQuery("SELECT * FROM SignAppDB.files where id = '" + perm["fileid"].ToString() + "';")[0]);
         }
         return ownedFiles;
+    }
+
+    public async Task<List<Dictionary<string, object>>> GetUserKeyPairs(string userId)
+    {
+        return SelectQuery("SELECT id,name FROM SignAppDB.userKeys where userid = '" + Convert.ToInt32(userId) + "';");
     }
 
     public List<Dictionary<string, object>> SelectQuery(string query)
