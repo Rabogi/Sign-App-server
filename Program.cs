@@ -391,6 +391,18 @@ app.MapPost("/trykey", async (HttpContext httpContext) =>
     return await authHandler.TryKey(data, sqlHandler, false);
 });
 
+app.MapGet("/listusers", () => {
+    var data = sqlHandler.SelectQuery("SELECT id , username FROM SignAppDB.users;");
+    var res = new Dictionary<string, object>();
+    for (int i = 0; i < data.Count; i++)
+    {
+        res.Add(i.ToString(), JsonHandler.MakeJson(data[i]));
+    }
+    return JsonHandler.MakeJson(res);
+});
+
+
+
 app.Run();
 // record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 // {
