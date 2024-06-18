@@ -307,6 +307,15 @@ public class SqlTools : SlimShady
         }
     }
 
+    public async Task<List<Dictionary<string,object>>> GetUserFiles(string userId){
+        var ownedFiles = SelectQuery("SELECT * FROM SignAppDB.files WHERE OWNER = '"+userId+"';");
+        var foreignPerms = SelectQuery("SELECT * FROM SignAppDB.perms where user = '"+userId+"';");
+        foreach(var perm in foreignPerms){
+            ownedFiles.Add(SelectQuery("SELECT * FROM SignAppDB.files where id = '"+perm["fileid"].ToString()+"';")[0]);
+        }
+        return ownedFiles;
+    }
+
     public List<Dictionary<string, object>> SelectQuery(string query)
     {
         List<Dictionary<string, object>> res = new List<Dictionary<string, object>>();

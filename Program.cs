@@ -1,5 +1,3 @@
-using System.Runtime.Intrinsics.Arm;
-using System.Text;
 using Sign_App_server;
 using Sign_App_server.lib;
 
@@ -27,16 +25,16 @@ authHandler.lifetime = lifetime;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// builder.Services.AddEndpointsApiExplorer();
+// builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// if (app.Environment.IsDevelopment())
+// {
+//     app.UseSwagger();
+//     app.UseSwaggerUI();
+// }
 
 app.UseHttpsRedirection();
 
@@ -106,7 +104,8 @@ app.MapPost("/sql", async (HttpContext httpContext) =>
         var data = JsonHandler.ReadJson(await reader.ReadToEndAsync());
         var res = sqlHandler.SelectQuery(data["Query"].ToString());
         string res1 = "";
-        foreach(var item in res){
+        foreach (var item in res)
+        {
             res1 += JsonHandler.MakeJson(item) + "\n";
         }
         return res1;
@@ -270,11 +269,44 @@ app.MapPost("/newkeypair", async (HttpContext httpContext) =>
     }
 });
 
+app.MapPost("/getfiles", async (HttpContext httpContext) =>
+{
+    StreamReader reader = new StreamReader(httpContext.Request.Body);
+    var data = JsonHandler.ReadJson(await reader.ReadToEndAsync());
+    var res = new Dictionary<string, object>();
+    if (await authHandler.TryKey(data["Key"].ToString(), sqlHandler, true))
+    {
+        var files = await sqlHandler.GetUserFiles(sqlHandler.getSession(data["Key"].ToString())[1]);
+        if (files != null)
+        {   
+            res.Add("Result","Success");
+            res.Add("Info",files.Count);
+            for (int i = 0; i < files.Count; i++)
+            {
+                res.Add(i.ToString(), JsonHandler.MakeJson(files[i]));
+            }
+            return JsonHandler.MakeJson(res);
+        }
+        else
+        {
+            res.Add("Result", "Failure");
+            res.Add("Info", "No files");
+            return JsonHandler.MakeJson(res);
+        }
+    }
+    else
+    {
+        res.Add("Result", "Request denied");
+        return JsonHandler.MakeJson(res);
+    }
+
+});
+
 app.MapPost("/trykey", async (HttpContext httpContext) =>
 {
     using StreamReader reader = new StreamReader(httpContext.Request.Body);
     string data = await reader.ReadToEndAsync();
-    return await authHandler.TryKey(data,sqlHandler,false);
+    return await authHandler.TryKey(data, sqlHandler, false);
 });
 
 app.Run();
