@@ -393,6 +393,20 @@ public class SqlTools : SlimShady
     public List<Dictionary<string, object>> GetSingsOfFile(string fileid){
         return SelectQuery("SELECT * FROM SignAppDB.signatures WHERE fileid = '"+fileid+"';");
     }
+
+    public string checkSignature(string signId){
+        string query = "SELECT * FROM SignAppDB.signatures WHERE id = '"+signId+"';";
+        var sign = SelectQuery(query)[0];
+        if(sign == null){
+            return "NotFound";
+        }
+        var keyPair = GetKeyPair(sign["keyid"].ToString());
+        if(keyPair == null){
+            return "ErrorInDB";
+        }
+        string filename = GetFilePath(sign["fileid"].ToString())["filename"].ToString();
+        return SlimShady.VerifySignature(File.ReadAllText(filename),sign["signature"].ToString(),keyPair["pubkey"].ToString()) ? "True" : "False";
+    }
 }
 
 

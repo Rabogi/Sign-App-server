@@ -517,9 +517,33 @@ app.MapPost("/filesigns", async (HttpContext httpContext) =>
             }
             res.Add("Result", "Success");
             res.Add("Count", signs.Count.ToString());
-            foreach(var sign in signs){
+            foreach (var sign in signs)
+            {
                 res.Add(sign["creationtime"].ToString(), "Signed by " + sign["userid"].ToString() + " with keypairid " + sign["keyid"].ToString());
             }
+            return JsonHandler.MakeJson(res);
+        }
+        else
+        {
+            res.Add("Result", "Request denied");
+            return JsonHandler.MakeJson(res);
+        }
+    }
+    res.Add("Result", "Failure");
+    res.Add("Info", "Malformed data");
+    return JsonHandler.MakeJson(res);
+});
+
+app.MapPost("/checksign", async (HttpContext httpContext) =>
+{
+    using StreamReader reader = new StreamReader(httpContext.Request.Body);
+    var data = JsonHandler.ReadJson(await reader.ReadToEndAsync());
+    var res = new Dictionary<string, object>();
+    if (data.ContainsKey("Key") & data.ContainsKey("SignID"))
+    {
+        if (await authHandler.TryKey(data["Key"].ToString(), sqlHandler, true))
+        { 
+            res.Add("Result", sqlHandler.checkSignature(data["SignID"].ToString()));
             return JsonHandler.MakeJson(res);
         }
         else
