@@ -320,7 +320,7 @@ public class SqlTools : SlimShady
 
     public async Task<List<Dictionary<string, object>>> GetUserKeyPairs(string userId)
     {
-        return SelectQuery("SELECT id,name FROM SignAppDB.userKeys where userid = '" + Convert.ToInt32(userId) + "';");
+        return SelectQuery("SELECT * FROM SignAppDB.userKeys where userid = '" + Convert.ToInt32(userId) + "';");
     }
 
     public List<Dictionary<string, object>> SelectQuery(string query)
@@ -346,6 +346,48 @@ public class SqlTools : SlimShady
         }
 
         return res;
+    }
+
+    public async Task<string> InsertSignature(string userId, string keyPairID, string signature, string fileId)
+    {   
+        if(checkIfSigned(userId, keyPairID, signature, fileId)){
+            return "Already signed";
+        }
+        string query = "INSERT INTO `SignAppDB`.`signatures` (`userid`, `keyid`, `signature`, `fileid`, `creationtime`) VALUES ('" + userId + "', '" + keyPairID + "', '" + signature + "', '" + fileId + "', '" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "');";
+        try
+        {
+            using (MySqlConnection conn = new MySqlConnection(connString))
+            {
+                conn.Open();
+
+                MySqlCommand command = new MySqlCommand(query, conn);
+                string res = (string)command.ExecuteScalar();
+
+                conn.Close();
+                return res;
+            }
+        }
+        catch (Exception e)
+        {
+            return "Error";
+        }
+    }
+
+    public Dictionary<string, object> GetFilePath(string fileId)
+    {
+        return SelectQuery("SELECT filename FROM SignAppDB.files WHERE id = '" + fileId + "';")[0];
+    }
+
+    public Dictionary<string, object> GetKeyPair(string keyPairId)
+    {
+        return SelectQuery("SELECT pubkey,prikey FROM SignAppDB.userKeys where id = '" + keyPairId + "';")[0];
+    }
+
+    public bool checkIfSigned(string userId, string keyPairID, string signature, string fileId)
+    {
+        string query = "SELECT id FROM SignAppDB.signatures where userid = '"+userId+"' and keyid = '"+keyPairID+"' and signature = '"+signature+"' and fileid = '"+fileId+"';";
+        var sign = SelectQuery(query);
+        return sign.Count > 0 ? true : false;
     }
 }
 

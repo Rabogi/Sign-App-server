@@ -430,6 +430,74 @@ app.MapPost("/getkeypairs", async (HttpContext httpContext) =>
     }
 });
 
+app.MapPost("/signfile", async (HttpContext httpContext) =>
+{
+    using StreamReader reader = new StreamReader(httpContext.Request.Body);
+    var data = JsonHandler.ReadJson(await reader.ReadToEndAsync());
+    var res = new Dictionary<string, object>();
+    if (data.ContainsKey("Key") & data.ContainsKey("FileID") & data.ContainsKey("KeyPairID"))
+    {
+        if (await authHandler.TryKey(data["Key"].ToString(), sqlHandler, true))
+        {
+            var userId = sqlHandler.getSession(data["Key"].ToString())[1];
+            var ownedFiles = await sqlHandler.GetUserFiles(userId);
+            List<int> fileIDs = [];
+            foreach (var file in ownedFiles)
+            {
+                fileIDs.Add(Convert.ToInt32(file["id"].ToString()));
+            }
+            if (!fileIDs.Contains(Convert.ToInt32(data["FileID"].ToString())))
+            {
+                res.Add("Result", "Failure");
+                res.Add("Info", "File id is not valid");
+                return JsonHandler.MakeJson(res);
+            }
+            var keyPairs = await sqlHandler.GetUserKeyPairs(userId);
+            List<int> keyPairIDs = [];
+            foreach (var item in keyPairs)
+            {
+                keyPairIDs.Add(Convert.ToInt32(item["id"].ToString()));
+            }
+            if (!keyPairIDs.Contains(Convert.ToInt32(data["KeyPairID"].ToString())))
+            {
+                res.Add("Result", "Failure");
+                res.Add("Info", "KeyPair id is not valid");
+                return JsonHandler.MakeJson(res);
+            }
+            string filename = sqlHandler.GetFilePath(data["FileID"].ToString())["filename"].ToString();
+            var keyPair = sqlHandler.GetKeyPair(data["KeyPairID"].ToString());
+
+            var sign = SlimShady.SignData(File.ReadAllText(filename), keyPair["prikey"].ToString());
+            bool check = SlimShady.VerifySignature(File.ReadAllText(filename), sign, keyPair["pubkey"].ToString());
+            if (check)
+            {   
+                var e = await sqlHandler.InsertSignature(userId, data["KeyPairID"].ToString(), sign, data["FileID"].ToString());
+                if (e == null)
+                {   
+                    res.Add("Result","Success");
+                    res.Add("Signature", sign);
+                    res.Add("Verification", check);
+                    return JsonHandler.MakeJson(res);
+                }
+                res.Add("Result", "Failure");
+                res.Add("Info", "Error while signing");
+                return JsonHandler.MakeJson(res);
+            }
+            res.Add("Result", "Failure");
+            res.Add("Info", "Error while signing");
+            return JsonHandler.MakeJson(res);
+        }
+        else
+        {
+            res.Add("Result", "Request denied");
+            return JsonHandler.MakeJson(res);
+        }
+    }
+    res.Add("Result", "Failure");
+    res.Add("Info", "Malformed data");
+    return JsonHandler.MakeJson(res);
+});
+
 app.Run();
 // record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 // {
