@@ -389,6 +389,10 @@ public class SqlTools : SlimShady
         var sign = SelectQuery(query);
         return sign.Count > 0 ? true : false;
     }
+
+    public List<Dictionary<string, object>> GetSingsOfFile(string fileid){
+        return SelectQuery("SELECT * FROM SignAppDB.signatures WHERE fileid = '"+fileid+"';");
+    }
 }
 
 

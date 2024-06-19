@@ -470,11 +470,11 @@ app.MapPost("/signfile", async (HttpContext httpContext) =>
             var sign = SlimShady.SignData(File.ReadAllText(filename), keyPair["prikey"].ToString());
             bool check = SlimShady.VerifySignature(File.ReadAllText(filename), sign, keyPair["pubkey"].ToString());
             if (check)
-            {   
+            {
                 var e = await sqlHandler.InsertSignature(userId, data["KeyPairID"].ToString(), sign, data["FileID"].ToString());
                 if (e == null)
-                {   
-                    res.Add("Result","Success");
+                {
+                    res.Add("Result", "Success");
                     res.Add("Signature", sign);
                     res.Add("Verification", check);
                     return JsonHandler.MakeJson(res);
@@ -485,6 +485,41 @@ app.MapPost("/signfile", async (HttpContext httpContext) =>
             }
             res.Add("Result", "Failure");
             res.Add("Info", "Error while signing");
+            return JsonHandler.MakeJson(res);
+        }
+        else
+        {
+            res.Add("Result", "Request denied");
+            return JsonHandler.MakeJson(res);
+        }
+    }
+    res.Add("Result", "Failure");
+    res.Add("Info", "Malformed data");
+    return JsonHandler.MakeJson(res);
+});
+
+app.MapPost("/filesigns", async (HttpContext httpContext) =>
+{
+
+    using StreamReader reader = new StreamReader(httpContext.Request.Body);
+    var data = JsonHandler.ReadJson(await reader.ReadToEndAsync());
+    var res = new Dictionary<string, object>();
+    if (data.ContainsKey("Key") & data.ContainsKey("FileID"))
+    {
+        if (await authHandler.TryKey(data["Key"].ToString(), sqlHandler, true))
+        {
+            var signs = sqlHandler.GetSingsOfFile(data["FileID"].ToString());
+            if (signs.Count == 0)
+            {
+                res.Add("Result", "Failure");
+                res.Add("Info", "No signatures");
+                return JsonHandler.MakeJson(res);
+            }
+            res.Add("Result", "Success");
+            res.Add("Count", signs.Count.ToString());
+            foreach(var sign in signs){
+                res.Add(sign["creationtime"].ToString(), "Signed by " + sign["userid"].ToString() + " with keypairid " + sign["keyid"].ToString());
+            }
             return JsonHandler.MakeJson(res);
         }
         else
