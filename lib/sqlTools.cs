@@ -318,6 +318,11 @@ public class SqlTools : SlimShady
         return ownedFiles;
     }
 
+    public async Task<List<Dictionary<string, object>>> GetUserOwnedFiles(string userId){
+        var ownedFiles = SelectQuery("SELECT * FROM SignAppDB.files WHERE OWNER = '" + userId + "';");
+        return ownedFiles;
+    }
+
     public async Task<List<Dictionary<string, object>>> GetUserKeyPairs(string userId)
     {
         return SelectQuery("SELECT * FROM SignAppDB.userKeys where userid = '" + Convert.ToInt32(userId) + "';");
@@ -406,6 +411,28 @@ public class SqlTools : SlimShady
         }
         string filename = GetFilePath(sign["fileid"].ToString())["filename"].ToString();
         return SlimShady.VerifySignature(File.ReadAllText(filename),sign["signature"].ToString(),keyPair["pubkey"].ToString()) ? "True" : "False";
+    }
+
+    public async Task<string> InsertPermission(string userId, string fileId)
+    {
+        string query = "INSERT INTO `SignAppDB`.`perms` (`user`, `readperm`, `writeperm`, `delperm`, `fileid`) VALUES ('"+userId+"', '1', '0', '0', '"+fileId+"');";
+        try
+        {
+            using (MySqlConnection conn = new MySqlConnection(connString))
+            {
+                conn.Open();
+
+                MySqlCommand command = new MySqlCommand(query, conn);
+                string res = (string)command.ExecuteScalar();
+
+                conn.Close();
+                return res;
+            }
+        }
+        catch (Exception e)
+        {
+            return "Error";
+        }
     }
 }
 

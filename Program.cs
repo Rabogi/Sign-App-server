@@ -542,9 +542,47 @@ app.MapPost("/checksign", async (HttpContext httpContext) =>
     if (data.ContainsKey("Key") & data.ContainsKey("SignID"))
     {
         if (await authHandler.TryKey(data["Key"].ToString(), sqlHandler, true))
-        { 
+        {
             res.Add("Result", sqlHandler.checkSignature(data["SignID"].ToString()));
             return JsonHandler.MakeJson(res);
+        }
+        else
+        {
+            res.Add("Result", "Request denied");
+            return JsonHandler.MakeJson(res);
+        }
+    }
+    res.Add("Result", "Failure");
+    res.Add("Info", "Malformed data");
+    return JsonHandler.MakeJson(res);
+});
+
+app.MapPost("/perms", async (HttpContext httpContext) =>
+{
+    using StreamReader reader = new StreamReader(httpContext.Request.Body);
+    var data = JsonHandler.ReadJson(await reader.ReadToEndAsync());
+    var res = new Dictionary<string, object>();
+    if (data.ContainsKey("Key") & data.ContainsKey("FileID"))
+    {
+        if (await authHandler.TryKey(data["Key"].ToString(), sqlHandler, true))
+        {
+            var userId = sqlHandler.getSession(data["Key"].ToString())[1];
+            var file = sqlHandler.SelectQuery("SELECT * FROM SignAppDB.files WHERE owner = '" + userId + "' and id = '" + data["FileID"].ToString() + "';")[0];
+
+            if (file == null)
+            {
+                res.Add("Result", "Request denied");
+                return JsonHandler.MakeJson(res);
+            }
+            if (await sqlHandler.InsertPermission(userId, data["FileID"].ToString()) == null)
+            {
+                res.Add("Result", "Success");
+                return JsonHandler.MakeJson(res);
+            }
+
+            res.Add("Result", "Failure");
+            return JsonHandler.MakeJson(res);
+
         }
         else
         {
